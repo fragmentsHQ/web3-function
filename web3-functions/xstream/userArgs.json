@@ -1,4 +1,12 @@
 {
-  "currency": "ethereum",
-  "oracle": "0x71B9B0F6C999CBbB0FeF9c92B80D54e4973214da"
+  "fromChain": "5",
+  "toChain": "80001",
+  "receiverAddress": "0x6d4b5acFB1C08127e8553CC41A9aC8F06610eFc7",
+  "senderAddress": "0x6d4b5acFB1C08127e8553CC41A9aC8F06610eFc7",
+  "originContractAddress": "0x23004200e3294E4671db026f842B00B6888ec0E3",
+  "destinationContractAddress": "0x0A69EaE3671D177d9E564c7f656515b74d434298",
+  "tokenAddress": "0x3427910EBBdABAD8e02823DFe05D34a65564b1a0",
+  "flowRate": "5000000000000",
+  "amount": "100000000000000000000",
+  "destinationDomain": "9991"
 }

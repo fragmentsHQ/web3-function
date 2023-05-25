@@ -25,8 +25,8 @@ Web3Function.onRun(async (context: any) => {
   const toChain = userArgs.toChain;
   const receiverAddress = userArgs.receiverAddress;
   const senderAddress = userArgs.senderAddress;
-  const originContractAddress = userArgs.originContract;
-  const destinationContractAddress = userArgs.destinationContract;
+  const originContractAddress = userArgs.originContractAddress;
+  const destinationContractAddress = userArgs.destinationContractAddress;
   const tokenAddress = userArgs.tokenAddress;
   const flowRate = userArgs.flowRate;
   const amount = userArgs.amount;
@@ -41,19 +41,19 @@ Web3Function.onRun(async (context: any) => {
       IERC20,
       provider
     );
-    const allowance = await tokenContract.allowance(senderAddress, originContractAddress);
+    const allowance = parseInt(await tokenContract.allowance(senderAddress, originContractAddress));
 
     if (allowance < amount) {
       return { canExec: false, message: `Amount is greater than allowance.` };
     }
 
-    const balance = await tokenContract.balanceOf(senderAddress);
+    const balance = parseInt(await tokenContract.balanceOf(senderAddress));
     if (balance < amount) {
       return { canExec: false, message: `Insufficient Balance.` };
     }
 
   } catch (error) {
-    return { canExec: false, message: `ERROR in fetching allowance.` };
+    return { canExec: false, message: `ERROR in fetching allowance, ${error}` };
   }
 
   // API CALL FOR RELAYER FEE
@@ -61,12 +61,12 @@ Web3Function.onRun(async (context: any) => {
   try {
     const connextRelayerFEE = `https://connext-relayer-fee.vercel.app/6648936/1886350457`;
 
-    const priceData: { FEE_USD: number } = await ky
+    const priceData: { FEE_USD: string } = await ky
       .get(connextRelayerFEE, { timeout: 15_000, retry: 5 })
       .json();
-    FEE_USD = Math.floor(priceData.FEE_USD);
-  } catch (err) {
-    return { canExec: false, message: `Connext RELAYER FEE API call failed` };
+    FEE_USD = parseInt(priceData.FEE_USD);
+  } catch (error) {
+    return { canExec: false, message: `Connext RELAYER FEE API call failed, ${error}` };
   }
 
   // ORIGIN CONTRACT INITILISATION
@@ -79,7 +79,7 @@ Web3Function.onRun(async (context: any) => {
     );
 
   } catch (error) {
-    return { canExec: false, message: `Contract Initialisation Failed` };
+    return { canExec: false, message: `Contract Initialisation Failed,  ${error}` };
   }
 
   // Return execution call data
@@ -89,12 +89,12 @@ Web3Function.onRun(async (context: any) => {
       {
         to: originContractAddress,
         data: originContract.interface.encodeFunctionData("_sendFlowMessage", [
-          "1", //streamActionType
-          receiverAddress, //receiver
-          flowRate, //flowRate
-          FEE_USD, //relayer fees
-          "300", //slippage
-          parseEther(amount.toString()), //amount of tokens to send
+          "1",
+          receiverAddress,
+          flowRate,
+          FEE_USD,
+          "300",
+          parseEther(amount.toString()),
           tokenAddress,
           destinationContractAddress,
           destinationDomain,
