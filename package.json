@@ -17,7 +17,8 @@
     "test": "npx hardhat test",
     "verify": "npx hardhat etherscan-verify",
     "create-task:xstream": "npx hardhat run ./scripts/create-task-xstream.ts",
-    "create-task:oracle": "npx hardhat run ./scripts/create-task-oracle.ts"
+    "create-task:oracle": "npx hardhat run ./scripts/create-task-oracle.ts",
+    "create-task:autopay": "npx hardhat run ./scripts/create-task-autopay.ts"
   },
   "license": "ISC",
   "devDependencies": {
