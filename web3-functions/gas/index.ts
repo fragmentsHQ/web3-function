@@ -11,33 +11,50 @@ const IERC20 = [
   "function balanceOf(address account) external view returns (uint256)",
   "function allowance(address owner, address spender) external view returns (uint256)",
 ];
-const AUTOPAY_CONTRACT = [
+const CONDITIONAL_CONTRACT = [
   {
     "inputs": [
       {
-        "internalType": "address",
-        "name": "_from",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
+        "internalType": "address[]",
         "name": "_to",
-        "type": "address"
+        "type": "address[]"
       },
       {
-        "internalType": "uint256",
+        "internalType": "uint256[]",
         "name": "_amount",
-        "type": "uint256"
+        "type": "uint256[]"
       },
       {
-        "internalType": "address",
-        "name": "_fromToken",
-        "type": "address"
+        "internalType": "int256",
+        "name": "_price",
+        "type": "int256"
       },
       {
-        "internalType": "address",
-        "name": "_toToken",
-        "type": "address"
+        "components": [
+          {
+            "internalType": "address",
+            "name": "_fromToken",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "_toToken",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "_tokenA",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "_tokenB",
+            "type": "address"
+          }
+        ],
+        "internalType": "struct Conditional.token[]",
+        "name": "_token",
+        "type": "tuple[]"
       },
       {
         "components": [
@@ -57,7 +74,106 @@ const AUTOPAY_CONTRACT = [
             "type": "address"
           }
         ],
-        "internalType": "struct AutoPay.connextModule",
+        "internalType": "struct Conditional.connextModule[]",
+        "name": "_connextModule",
+        "type": "tuple[]"
+      },
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "_cycles",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "_startTime",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "_interval",
+            "type": "uint256"
+          },
+          {
+            "internalType": "string",
+            "name": "_web3FunctionHash",
+            "type": "string"
+          }
+        ],
+        "internalType": "struct Conditional.gelatoModule",
+        "name": "_gelatoModule",
+        "type": "tuple"
+      }
+    ],
+    "name": "_createMultiplePriceFeedAutomate",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_to",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_amount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "int256",
+        "name": "_price",
+        "type": "int256"
+      },
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "_fromToken",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "_toToken",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "_tokenA",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "_tokenB",
+            "type": "address"
+          }
+        ],
+        "internalType": "struct Conditional.token",
+        "name": "_token",
+        "type": "tuple"
+      },
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "_toChain",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint32",
+            "name": "_destinationDomain",
+            "type": "uint32"
+          },
+          {
+            "internalType": "address",
+            "name": "_destinationContract",
+            "type": "address"
+          }
+        ],
+        "internalType": "struct Conditional.connextModule",
         "name": "_connextModule",
         "type": "tuple"
       },
@@ -84,17 +200,12 @@ const AUTOPAY_CONTRACT = [
             "type": "string"
           }
         ],
-        "internalType": "struct AutoPay.gelatoModule",
+        "internalType": "struct Conditional.gelatoModule",
         "name": "_gelatoModule",
         "type": "tuple"
-      },
-      {
-        "internalType": "uint256",
-        "name": "_relayerFeeInTransactingAsset",
-        "type": "uint256"
       }
     ],
-    "name": "_timeAutomateCron",
+    "name": "_createPriceFeedAutomate",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -109,8 +220,11 @@ Web3Function.onRun(async (context: any) => {
   const senderAddress = userArgs._from;
   const receiverAddress = userArgs._to;
   const amount = userArgs._amount;
+  const price = userArgs._price;
   const fromToken = userArgs._fromToken;
   const toToken = userArgs._toToken;
+  const tokenA = userArgs._tokenA;
+  const tokenB = userArgs._tokenB;
 
   // connext module
   const fromChain = userArgs._fromChain;
@@ -132,10 +246,16 @@ Web3Function.onRun(async (context: any) => {
     receiverAddress,
     "amount",
     amount,
+    "price",
+    price,
     "fromToken",
     fromToken,
     "toToken",
     toToken,
+    "tokenA",
+    tokenA,
+    "tokenB",
+    tokenB,
     "toChain",
     toChain,
     "originDomain",
@@ -153,6 +273,34 @@ Web3Function.onRun(async (context: any) => {
     "interval",
     interval
   )
+  // const priceDataA: { [key: string]: { usd: number } } = await ky
+
+  // Get current gas price
+  let gasFetched = 0;
+  try {
+
+    const coingeckoApiA = `https://api.blocknative.com/gasprices/blockprices?chainid=${fromChain}`;
+
+    // console.log(coingeckoApiA);
+
+    const priceDataA: any = await ky
+      .get(coingeckoApiA, { timeout: 15_000, retry: 5 })
+      .json();
+
+
+
+
+    console.log("priceA", priceDataA.blockPrices[0].baseFeePerGas);
+    gasFetched = parseInt(priceDataA.blockPrices[0].baseFeePerGas);
+
+  } catch (err) {
+    console.log({ canExec: false, message: `Coingecko call failed, ${err}` });
+  }
+  console.log(`Updating price: ${gasFetched}`);
+
+  if (gasFetched != Math.floor(price)) {
+    return { canExec: false, message: `Condition not met, GIVEN : ${price}, FETCHED : ${gasFetched}` };
+  }
 
 
   // APPROVAL CHECK
@@ -194,12 +342,14 @@ Web3Function.onRun(async (context: any) => {
 
   console.log("API CALL FOR RELAYER FEE DONE", FEE_USD);
 
+
+
   // ORIGIN CONTRACT INITILISATION
   let originContract;
   try {
     originContract = new Contract(
       originContractAddress,
-      AUTOPAY_CONTRACT,
+      CONDITIONAL_CONTRACT,
       provider
     );
 
@@ -215,12 +365,17 @@ Web3Function.onRun(async (context: any) => {
     callData: [
       {
         to: originContractAddress,
-        data: originContract.interface.encodeFunctionData("_timeAutomateCron", [
+        data: originContract.interface.encodeFunctionData("_priceFeedAutomateCron", [
           senderAddress.toString(),
           receiverAddress.toString(),
           amount.toString(),
-          fromToken.toString(),
-          toToken.toString(),
+          price.toString(),
+          {
+            _fromToken: fromToken.toString(),
+            _toToken: toToken.toString(),
+            _tokenA: tokenA.toString(),
+            _tokenB: tokenB.toString()
+          },
           {
             _toChain: toChain.toString(),
             _destinationDomain: destinationDomain.toString(),
@@ -230,7 +385,7 @@ Web3Function.onRun(async (context: any) => {
             _cycles: cycles.toString(),
             _startTime: startTime.toString(),
             _interval: interval.toString(),
-            _web3FunctionHash: "Qmbfmo98TLNKjCKgvJxwuSfuV99BPinpPazLupVmcLPzat"
+            _web3FunctionHash: ""
           },
           FEE_USD.toString()
         ]),
@@ -238,4 +393,5 @@ Web3Function.onRun(async (context: any) => {
     ],
   };
 });
+
 

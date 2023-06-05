@@ -7,6 +7,7 @@
   "_toToken": "0x7ea6eA49B0b0Ae9c5db7907d139D9Cd3439862a1",
   "_tokenA": "0x7ea6eA49B0b0Ae9c5db7907d139D9Cd3439862a1",
   "_tokenB": "0x7ea6eA49B0b0Ae9c5db7907d139D9Cd3439862a1",
+  "_fromChain": "1",
   "_toChain": "80001",
   "_originDomain": "1735353714",
   "_destinationDomain": "9991",

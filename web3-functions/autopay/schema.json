@@ -6,16 +6,17 @@
   "userArgs": {
     "_from": "string",
     "_to": "string",
-    "_amount": "string",
+    "_amount": "uint",
     "_fromToken": "string",
     "_toToken": "string",
-    "_toChain": "string",
-    "_originDomain": "string",
-    "_destinationDomain": "string",
-    "_originContractAddress" : "string",
+    "_fromChain" : "uint",
+    "_toChain": "uint",
+    "_originDomain": "uint",
+    "_destinationDomain": "uint",
+    "_originContractAddress": "string",
     "_destinationContractAddress": "string",
-    "_cycles": "string",
-    "_startTime": "string",
-    "_interval": "string"
+    "_cycles": "uint",
+    "_startTime": "uint",
+    "_interval": "uint"
   }
 }

@@ -5,7 +5,7 @@ const { ethers, w3f } = hre;
 
 const main = async () => {
 
-  const oracleW3f = w3f.get("oracle");
+  const oracleW3f = w3f.get("gas");
 
   const [deployer] = await ethers.getSigners();
   const chainId = (await ethers.provider.getNetwork()).chainId;
@@ -21,7 +21,7 @@ const main = async () => {
   // Create task using automate sdk
   console.log("Creating automate task...");
   const { taskId, tx } = await automate.createBatchExecTask({
-    name: "Web3Function - Eth Oracle",
+    name: "Web3Function - Eth GAS",
     web3FunctionHash: cid,
     web3FunctionArgs: {
       "_from": "0x6d4b5acFB1C08127e8553CC41A9aC8F06610eFc7",
