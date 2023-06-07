@@ -40,53 +40,39 @@ const AUTOPAY_CONTRACT = [
         "type": "address"
       },
       {
-        "components": [
-          {
-            "internalType": "uint256",
-            "name": "_toChain",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint32",
-            "name": "_destinationDomain",
-            "type": "uint32"
-          },
-          {
-            "internalType": "address",
-            "name": "_destinationContract",
-            "type": "address"
-          }
-        ],
-        "internalType": "struct AutoPay.connextModule",
-        "name": "_connextModule",
-        "type": "tuple"
+        "internalType": "uint256",
+        "name": "_toChain",
+        "type": "uint256"
       },
       {
-        "components": [
-          {
-            "internalType": "uint256",
-            "name": "_cycles",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "_startTime",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "_interval",
-            "type": "uint256"
-          },
-          {
-            "internalType": "string",
-            "name": "_web3FunctionHash",
-            "type": "string"
-          }
-        ],
-        "internalType": "struct AutoPay.gelatoModule",
-        "name": "_gelatoModule",
-        "type": "tuple"
+        "internalType": "uint32",
+        "name": "_destinationDomain",
+        "type": "uint32"
+      },
+      {
+        "internalType": "address",
+        "name": "_destinationContract",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_cycles",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_startTime",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_interval",
+        "type": "uint256"
+      },
+      {
+        "internalType": "string",
+        "name": "_web3FunctionHash",
+        "type": "string"
       },
       {
         "internalType": "uint256",
@@ -221,17 +207,13 @@ Web3Function.onRun(async (context: any) => {
           amount.toString(),
           fromToken.toString(),
           toToken.toString(),
-          {
-            _toChain: toChain.toString(),
-            _destinationDomain: destinationDomain.toString(),
-            _destinationContract: destinationContractAddress.toString()
-          },
-          {
-            _cycles: cycles.toString(),
-            _startTime: startTime.toString(),
-            _interval: interval.toString(),
-            _web3FunctionHash: "Qmbfmo98TLNKjCKgvJxwuSfuV99BPinpPazLupVmcLPzat"
-          },
+          toChain.toString(),
+          destinationDomain.toString(),
+          destinationContractAddress.toString(),
+          cycles.toString(),
+          startTime.toString(),
+          interval.toString(),
+          "Qmbfmo98TLNKjCKgvJxwuSfuV99BPinpPazLupVmcLPzat",
           FEE_USD.toString()
         ]),
       },
