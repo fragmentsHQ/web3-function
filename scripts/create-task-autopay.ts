@@ -26,7 +26,7 @@ const main = async () => {
         web3FunctionArgs: {
             _from: "0x6d4b5acFB1C08127e8553CC41A9aC8F06610eFc7",
             _to: "0x6d4b5acFB1C08127e8553CC41A9aC8F06610eFc7",
-            _amount:ethers.utils.parseEther("100"),
+            _amount:"10000000000000000000000",
             _fromToken: "0x7ea6eA49B0b0Ae9c5db7907d139D9Cd3439862a1",
             _toToken: "0xeDb95D8037f769B72AAab41deeC92903A98C9E16",
             _fromChain : 5,

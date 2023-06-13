@@ -383,24 +383,15 @@ Web3Function.onRun(async (context: any) => {
           receiverAddress.toString(),
           amount.toString(),
           price.toString(),
-          {
-            _fromToken: fromToken.toString(),
-            _toToken: toToken.toString(),
-            _tokenA: tokenA.toString(),
-            _tokenB: tokenB.toString()
-          },
-          {
-            _toChain: toChain.toString(),
-            _destinationDomain: destinationDomain.toString(),
-            _destinationContract: destinationContractAddress.toString()
-          },
-          {
-            _cycles: cycles.toString(),
-            _startTime: startTime.toString(),
-            _interval: interval.toString(),
-            _web3FunctionHash: ""
-          },
-          FEE_USD.toString()
+          fromToken.toString(),
+          toToken.toString(),
+          toChain,
+          destinationDomain,
+          destinationContractAddress.toString(),
+          cycles,
+          startTime,
+          interval,
+          (FEE_USD).toString()
         ]),
       },
     ],

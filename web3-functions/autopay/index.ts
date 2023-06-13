@@ -70,11 +70,6 @@ const AUTOPAY_CONTRACT = [
         "type": "uint256"
       },
       {
-        "internalType": "string",
-        "name": "_web3FunctionHash",
-        "type": "string"
-      },
-      {
         "internalType": "uint256",
         "name": "_relayerFeeInTransactingAsset",
         "type": "uint256"
@@ -142,31 +137,31 @@ Web3Function.onRun(async (context: any) => {
 
 
   // APPROVAL CHECK
-  try {
-    const tokenContract = new Contract(
-      fromToken.toString(),
-      IERC20,
-      provider
-    );
-    const allowance = parseInt(await tokenContract.allowance(senderAddress, originContractAddress));
+  // try {
+  //   const tokenContract = new Contract(
+  //     fromToken.toString(),
+  //     IERC20,
+  //     provider
+  //   );
+  //   const allowance = parseInt(await tokenContract.allowance(senderAddress, originContractAddress));
 
-    if (allowance < amount) {
-      return { canExec: false, message: `Amount is greater than allowance.` };
-    }
+  //   if (allowance < amount) {
+  //     return { canExec: false, message: `Amount is greater than allowance.` };
+  //   }
 
-    const balance = parseInt(await tokenContract.balanceOf(senderAddress));
-    if (balance < amount) {
-      return { canExec: false, message: `Insufficient Balance.` };
-    }
+  //   const balance = parseInt(await tokenContract.balanceOf(senderAddress));
+  //   if (balance < amount) {
+  //     return { canExec: false, message: `Insufficient Balance.` };
+  //   }
 
-  } catch (error) {
-    return { canExec: false, message: `ERROR in fetching allowance, ${error}` };
-  }
+  // } catch (error) {
+  //   return { canExec: false, message: `ERROR in fetching allowance, ${error}` };
+  // }
 
-  console.log("APPROVAL CHECK DONE")
+  // console.log("APPROVAL CHECK DONE")
 
   // API CALL FOR RELAYER FEE
-  let FEE_USD = 0;
+  let FEE_USD: Number = 0;
   try {
     const connextRelayerFEE = `https://connext-relayer-fee.vercel.app/${originDomain}/${destinationDomain}`;
 
@@ -193,7 +188,7 @@ Web3Function.onRun(async (context: any) => {
     return { canExec: false, message: `Contract Initialisation Failed,  ${error}` };
   }
 
-  console.log("ORIGIN CONTRACT INITILISATION DONE")
+  console.log("ORIGIN CONTRACT INITILISATION DONE", originContract);
 
   // Return execution call data
   return {
@@ -207,14 +202,13 @@ Web3Function.onRun(async (context: any) => {
           amount.toString(),
           fromToken.toString(),
           toToken.toString(),
-          toChain.toString(),
-          destinationDomain.toString(),
+          toChain,
+          destinationDomain,
           destinationContractAddress.toString(),
-          cycles.toString(),
-          startTime.toString(),
-          interval.toString(),
-          "Qmbfmo98TLNKjCKgvJxwuSfuV99BPinpPazLupVmcLPzat",
-          FEE_USD.toString()
+          cycles,
+          startTime,
+          interval,
+          (FEE_USD).toString()
         ]),
       },
     ],

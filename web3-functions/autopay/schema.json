@@ -6,7 +6,7 @@
   "userArgs": {
     "_from": "string",
     "_to": "string",
-    "_amount": "number",
+    "_amount": "string",
     "_fromToken": "string",
     "_toToken": "string",
     "_fromChain" : "number",
