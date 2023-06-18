@@ -12,15 +12,14 @@
     "_toToken": "string",
     "_tokenA": "string",
     "_tokenB": "string",
-    "_fromChain": "string",
-    "_toChain": "string",
-    "_originDomain": "string",
-    "_destinationDomain": "string",
+    "_fromChain": "number",
+    "_toChain": "number",
+    "_originDomain": "number",
+    "_destinationDomain": "number",
     "_originContractAddress": "string",
     "_destinationContractAddress": "string",
-    "_cycles": "string",
-    "_startTime": "string",
-    "_interval": "string"
+    "_cycles": "number",
+    "_startTime": "number",
+    "_interval": "number"
   }
 }
-

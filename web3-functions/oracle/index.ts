@@ -5,114 +5,25 @@ import {
 import { Contract } from "ethers";
 import ky from "ky"; // we recommend using ky as axios doesn't support fetch by default
 
-import { parseEther } from "ethers/lib/utils";
+import { isAddress, parseEther } from "ethers/lib/utils";
 
 const IERC20 = [
   "function balanceOf(address account) external view returns (uint256)",
   "function allowance(address owner, address spender) external view returns (uint256)",
 ];
+
+const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
+
+const ETH = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
+
 const CONDITIONAL_CONTRACT = [
   {
     "inputs": [
       {
-        "internalType": "address[]",
-        "name": "_to",
-        "type": "address[]"
+        "internalType": "address",
+        "name": "_from",
+        "type": "address"
       },
-      {
-        "internalType": "uint256[]",
-        "name": "_amount",
-        "type": "uint256[]"
-      },
-      {
-        "internalType": "int256",
-        "name": "_price",
-        "type": "int256"
-      },
-      {
-        "components": [
-          {
-            "internalType": "address",
-            "name": "_fromToken",
-            "type": "address"
-          },
-          {
-            "internalType": "address",
-            "name": "_toToken",
-            "type": "address"
-          },
-          {
-            "internalType": "address",
-            "name": "_tokenA",
-            "type": "address"
-          },
-          {
-            "internalType": "address",
-            "name": "_tokenB",
-            "type": "address"
-          }
-        ],
-        "internalType": "struct Conditional.token[]",
-        "name": "_token",
-        "type": "tuple[]"
-      },
-      {
-        "components": [
-          {
-            "internalType": "uint256",
-            "name": "_toChain",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint32",
-            "name": "_destinationDomain",
-            "type": "uint32"
-          },
-          {
-            "internalType": "address",
-            "name": "_destinationContract",
-            "type": "address"
-          }
-        ],
-        "internalType": "struct Conditional.connextModule[]",
-        "name": "_connextModule",
-        "type": "tuple[]"
-      },
-      {
-        "components": [
-          {
-            "internalType": "uint256",
-            "name": "_cycles",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "_startTime",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "_interval",
-            "type": "uint256"
-          },
-          {
-            "internalType": "string",
-            "name": "_web3FunctionHash",
-            "type": "string"
-          }
-        ],
-        "internalType": "struct Conditional.gelatoModule",
-        "name": "_gelatoModule",
-        "type": "tuple"
-      }
-    ],
-    "name": "_createMultiplePriceFeedAutomate",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
       {
         "internalType": "address",
         "name": "_to",
@@ -124,93 +35,97 @@ const CONDITIONAL_CONTRACT = [
         "type": "uint256"
       },
       {
-        "internalType": "int256",
+        "internalType": "uint256",
         "name": "_price",
-        "type": "int256"
+        "type": "uint256"
       },
       {
-        "components": [
-          {
-            "internalType": "address",
-            "name": "_fromToken",
-            "type": "address"
-          },
-          {
-            "internalType": "address",
-            "name": "_toToken",
-            "type": "address"
-          },
-          {
-            "internalType": "address",
-            "name": "_tokenA",
-            "type": "address"
-          },
-          {
-            "internalType": "address",
-            "name": "_tokenB",
-            "type": "address"
-          }
-        ],
-        "internalType": "struct Conditional.token",
-        "name": "_token",
-        "type": "tuple"
+        "internalType": "address",
+        "name": "_fromToken",
+        "type": "address"
       },
       {
-        "components": [
-          {
-            "internalType": "uint256",
-            "name": "_toChain",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint32",
-            "name": "_destinationDomain",
-            "type": "uint32"
-          },
-          {
-            "internalType": "address",
-            "name": "_destinationContract",
-            "type": "address"
-          }
-        ],
-        "internalType": "struct Conditional.connextModule",
-        "name": "_connextModule",
-        "type": "tuple"
+        "internalType": "address",
+        "name": "_toToken",
+        "type": "address"
       },
       {
-        "components": [
-          {
-            "internalType": "uint256",
-            "name": "_cycles",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "_startTime",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "_interval",
-            "type": "uint256"
-          },
-          {
-            "internalType": "string",
-            "name": "_web3FunctionHash",
-            "type": "string"
-          }
-        ],
-        "internalType": "struct Conditional.gelatoModule",
-        "name": "_gelatoModule",
-        "type": "tuple"
+        "internalType": "uint256",
+        "name": "_toChain",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint32",
+        "name": "_destinationDomain",
+        "type": "uint32"
+      },
+      {
+        "internalType": "address",
+        "name": "_destinationContract",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_cycles",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_startTime",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_interval",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_relayerFeeInTransactingAsset",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "_swapper",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes",
+        "name": "_swapData",
+        "type": "bytes"
       }
     ],
-    "name": "_createPriceFeedAutomate",
+    "name": "_priceFeedAutomateCron",
     "outputs": [],
-    "stateMutability": "nonpayable",
+    "stateMutability": "payable",
     "type": "function"
   }
 ];
+
+const URL: any = {
+  1: "https://api.0x.org/",
+  5: "https://goerli.api.0x.org/",
+  137: "https://polygon.api.0x.org/",
+  80001: "https://mumbai.api.0x.org/",
+  38: "https://bsc.api.0x.org/",
+  10: "https://optimism.api.0x.org/",
+  250: "https://fantom.api.0x.org/",
+  42220: "https://celo.api.0x.org/",
+  43114: "https://avalanche.api.0x.org/",
+  42161: "https://arbitrum.api.0x.org/",
+}
+
+interface Response {
+  price: string;
+  guaranteedPrice: string;
+  estimatedPriceImpact: string;
+  to: string;
+  data: string;
+  value: string;
+  gas: string;
+  estimatedGas: string;
+  gasPrice: string;
+}
 
 Web3Function.onRun(async (context: any) => {
   const { userArgs, multiChainProvider } = context;
@@ -227,6 +142,7 @@ Web3Function.onRun(async (context: any) => {
   const tokenB = userArgs._tokenB;
 
   // connext module
+  const fromChain = userArgs._fromChain;
   const toChain = userArgs._toChain;
   const originDomain = userArgs._originDomain;
   const destinationDomain = userArgs._destinationDomain;
@@ -272,73 +188,80 @@ Web3Function.onRun(async (context: any) => {
     "interval",
     interval
   )
-  // const priceDataA: { [key: string]: { usd: number } } = await ky
 
-  // Get current price on coingecko
-  let priceFetched = 0;
-  let priceA;
-  let priceB;
+  if (fromToken == ETH || toToken == ETH || fromToken == ZERO_ADDRESS || toToken == ZERO_ADDRESS) {
+    return { canExec: false, message: "Native Currency Not Supported, TRY ERC20 TOKENS" };
+  }
 
-  const coingeckoApiA = `https://api.coingecko.com/api/v3/simple/token_price/ethereum?contract_addresses=${tokenA}&vs_currencies=usd`;
+  let priceData: Response;
+  try {
+    const API = ky.extend({
+      hooks: {
+        beforeRequest: [
+          request => {
+            request.headers.set('0x-api-key', 'b40bf764-6025-4f73-8507-8f398720c356');
+          }
+        ]
+      }
+    });
 
-  // console.log(coingeckoApiA);
+    const ZeroXAPI = `swap/v1/quote?buyToken=0x07865c6E87B9F70255377e024ace6630C1Eaa37F&sellToken=ETH&sellAmount=100000`;
 
-  const priceDataA: { [key: string]: { usd: number } } = await ky
-    .get(coingeckoApiA, { timeout: 15_000, retry: 5 })
-    .json();
+    console.log(URL[fromChain] + ZeroXAPI);
 
-  // console.log(priceDataA[tokenA].usd);
-  priceA = (priceDataA[tokenA].usd);
+    priceData = await API
+      .get(ZeroXAPI, { prefixUrl: URL[fromChain], timeout: 15_000, retry: 5 })
+      .json();
 
-
-  console.log("priceA", priceA);
-
-  const coingeckoApiB = `https://api.coingecko.com/api/v3/simple/token_price/ethereum?contract_addresses=${tokenB}&vs_currencies=usd`;
-
-  console.log(coingeckoApiB);
-
-  const priceDataB: { [key: string]: { usd: number } } = await ky
-    .get(coingeckoApiB, { timeout: 15_000, retry: 5 })
-    .json();
-
-  console.log(priceDataB);
-  priceB = (priceDataB[tokenB].usd);
+    console.log(priceData.guaranteedPrice);
+    console.log(priceData.to);
+    console.log(priceData.data);
+    console.log(priceData.estimatedGas);
 
 
-  console.log("priceB", priceB);
+    let priceFetched: Number = Number(priceData.guaranteedPrice);
 
-
-
-  priceFetched = Math.floor(priceA / priceB);
-
-  if (priceFetched != Math.floor(price)) {
-    return { canExec: false, message: `Condition not met, GIVEN : ${price}, FETCHED : ${priceFetched}` };
+    if (priceFetched != Math.floor(price)) {
+      console.log(`Condition not met, GIVEN : ${price}, FETCHED : ${priceFetched}`)
+      return { canExec: false, message: `Condition not met, GIVEN : ${price}, FETCHED : ${priceFetched}` };
+    }
+  } catch (error) {
+    console.error(error);
+    return { canExec: false, message: `1inch API call failed, ${error}` };
   }
 
 
   // APPROVAL CHECK
+  let balance;
   try {
-    const tokenContract = new Contract(
-      fromToken.toString(),
-      IERC20,
-      provider
-    );
-    const allowance = parseInt(await tokenContract.allowance(senderAddress, originContractAddress));
+    if (fromToken == ETH) {
+      balance = (await provider.getBalance(senderAddress)).toString();
 
-    if (allowance < amount) {
-      return { canExec: false, message: `Amount is greater than allowance.` };
-    }
+    } else {
 
-    const balance = parseInt(await tokenContract.balanceOf(senderAddress));
-    if (balance < amount) {
-      return { canExec: false, message: `Insufficient Balance.` };
+
+      const tokenContract = new Contract(
+        fromToken.toString(),
+        IERC20,
+        provider
+      );
+      const allowance = parseInt(await tokenContract.allowance(senderAddress, originContractAddress));
+
+      if (allowance < amount) {
+        return { canExec: false, message: `Amount is greater than allowance.` };
+      }
+
+      balance = parseInt(await tokenContract.balanceOf(senderAddress));
+      if (balance < amount) {
+        return { canExec: false, message: `Insufficient Balance.` };
+      }
     }
 
   } catch (error) {
     return { canExec: false, message: `ERROR in fetching allowance, ${error}` };
   }
 
-  console.log("APPROVAL CHECK DONE")
+  console.log("APPROVAL CHECK DONE", balance)
 
   // API CALL FOR RELAYER FEE
   let FEE_USD = 0;
@@ -391,8 +314,11 @@ Web3Function.onRun(async (context: any) => {
           cycles,
           startTime,
           interval,
-          (FEE_USD).toString()
+          (FEE_USD).toString(),
+          String(priceData.to),
+          String(priceData.data)
         ]),
+        value: String(0)
       },
     ],
   };
