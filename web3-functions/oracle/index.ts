@@ -9,6 +9,7 @@ import { isAddress, parseEther } from "ethers/lib/utils";
 
 const IERC20 = [
   "function balanceOf(address account) external view returns (uint256)",
+  "function decimals() external view returns (uint8)",
   "function allowance(address owner, address spender) external view returns (uint256)",
 ];
 
@@ -125,6 +126,7 @@ interface Response {
   gas: string;
   estimatedGas: string;
   gasPrice: string;
+  sellTokenToEthRate: string;
 }
 
 const IS_PROD = false;
@@ -195,6 +197,8 @@ Web3Function.onRun(async (context: any) => {
     return { canExec: false, message: "Native Currency Not Supported, TRY ERC20 TOKENS" };
   }
 
+  let swapper: string = ZERO_ADDRESS;
+  let swapData: string = "0x";
   let priceData: Response;
   try {
     const API = ky.extend({
@@ -215,9 +219,12 @@ Web3Function.onRun(async (context: any) => {
       .get(ZeroXAPI, { prefixUrl: URL[fromChain], timeout: 15_000, retry: 5 })
       .json();
 
+    swapper = priceData.to;
+    swapData = priceData.data;
+
     console.log(priceData.guaranteedPrice);
-    console.log(priceData.to);
-    console.log(priceData.data);
+    console.log(swapper);
+    console.log(swapData);
     console.log(priceData.estimatedGas);
 
 
@@ -241,6 +248,7 @@ Web3Function.onRun(async (context: any) => {
 
   // APPROVAL CHECK
   let balance;
+  let decimals: number = 18;
   try {
     if (fromToken == ETH) {
       balance = (await provider.getBalance(senderAddress)).toString();
@@ -263,6 +271,7 @@ Web3Function.onRun(async (context: any) => {
       if (balance < amount) {
         return { canExec: false, message: `Insufficient Balance. ${balance} ${amount}` };
       }
+      decimals = parseInt(await tokenContract.decimals());
     }
 
   } catch (error) {
@@ -272,20 +281,25 @@ Web3Function.onRun(async (context: any) => {
   console.log("APPROVAL CHECK DONE", balance)
 
   // API CALL FOR RELAYER FEE
-  let FEE_USD = 0;
-  try {
-    const connextRelayerFEE = `https://connext-relayer-fee.vercel.app/${originDomain}/${destinationDomain}`;
+  let FEE = 0;
+  if (fromChain != toChain) {
+    try {
+      const connextRelayerFEE = `https://connext-relayer-fee.vercel.app/${originDomain}/${destinationDomain}`;
 
-    const priceData: { FEE_USD: number } = await ky
-      .get(connextRelayerFEE, { timeout: 15_000, retry: 5 })
-      .json();
-    FEE_USD = parseInt(priceData.FEE_USD.toString());
-  } catch (error) {
-    return { canExec: false, message: `Connext RELAYER FEE API call failed, ${error}` };
+      const priceData: { FEE: number } = await ky
+        .get(connextRelayerFEE, { timeout: 15_000, retry: 5 })
+        .json();
+      FEE = parseInt(priceData.FEE.toString());
+    } catch (error) {
+      return { canExec: false, message: `Connext RELAYER FEE API call failed, ${error}` };
+    }
+
+    console.log("API CALL FOR RELAYER FEE DONE", FEE, ((amount / 10 ** decimals) / parseInt(priceData.sellTokenToEthRate)) * 10 ** 18);
+
+    if (FEE > ((amount / 10 ** decimals) / parseInt(priceData.sellTokenToEthRate)) * 10 ** 18) {
+      return { canExec: false, message: `Relayer FEE is greater than amount. ${FEE} ${((amount / 10 ** decimals) / parseInt(priceData.sellTokenToEthRate)) * 10 ** 18}` };
+    }
   }
-
-  console.log("API CALL FOR RELAYER FEE DONE", FEE_USD);
-
 
 
   // ORIGIN CONTRACT INITILISATION
@@ -322,9 +336,9 @@ Web3Function.onRun(async (context: any) => {
           cycles,
           startTime,
           interval,
-          (FEE_USD).toString(),
-          String(priceData.to),
-          String(priceData.data)
+          (FEE).toString(),
+          String(swapper),
+          String(swapData)
         ]),
         value: String(0)
       },
