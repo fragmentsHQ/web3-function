@@ -95,7 +95,7 @@ const CONDITIONAL_CONTRACT = [
         "type": "bytes"
       }
     ],
-    "name": "_priceFeedAutomateCron",
+    "name": "_conditionalAutomateCron",
     "outputs": [],
     "stateMutability": "payable",
     "type": "function"
@@ -126,6 +126,8 @@ interface Response {
   estimatedGas: string;
   gasPrice: string;
 }
+
+const IS_PROD = false;
 
 Web3Function.onRun(async (context: any) => {
   const { userArgs, multiChainProvider } = context;
@@ -205,7 +207,7 @@ Web3Function.onRun(async (context: any) => {
       }
     });
 
-    const ZeroXAPI = `swap/v1/quote?buyToken=0x07865c6E87B9F70255377e024ace6630C1Eaa37F&sellToken=ETH&sellAmount=100000`;
+    const ZeroXAPI = `swap/v1/quote?buyToken=${toToken}&sellToken=${fromToken}&sellAmount=${amount}`;
 
     console.log(URL[fromChain] + ZeroXAPI);
 
@@ -219,15 +221,21 @@ Web3Function.onRun(async (context: any) => {
     console.log(priceData.estimatedGas);
 
 
-    let priceFetched: Number = Number(priceData.guaranteedPrice);
+    let priceFetched: Number = Math.floor(Number(priceData.guaranteedPrice));
 
-    if (priceFetched != Math.floor(price)) {
-      console.log(`Condition not met, GIVEN : ${price}, FETCHED : ${priceFetched}`)
-      return { canExec: false, message: `Condition not met, GIVEN : ${price}, FETCHED : ${priceFetched}` };
+    if (IS_PROD) {
+      if (priceFetched != (price)) {
+        console.log(`Condition not met, GIVEN : ${price}, FETCHED : ${priceFetched}`)
+        return { canExec: false, message: `Condition not met, GIVEN : ${price}, FETCHED : ${priceFetched}` };
+      }
+    } else {
+      if (priceFetched != (price)) {
+        console.log(`Condition not met, GIVEN : ${price}, FETCHED : ${priceFetched}`);
+      }
     }
   } catch (error) {
     console.error(error);
-    return { canExec: false, message: `1inch API call failed, ${error}` };
+    return { canExec: false, message: `ZeroX API call failed, ${error}` };
   }
 
 
@@ -248,12 +256,12 @@ Web3Function.onRun(async (context: any) => {
       const allowance = parseInt(await tokenContract.allowance(senderAddress, originContractAddress));
 
       if (allowance < amount) {
-        return { canExec: false, message: `Amount is greater than allowance.` };
+        return { canExec: false, message: `Amount is greater than allowance. ${allowance} ${amount}` };
       }
 
       balance = parseInt(await tokenContract.balanceOf(senderAddress));
       if (balance < amount) {
-        return { canExec: false, message: `Insufficient Balance.` };
+        return { canExec: false, message: `Insufficient Balance. ${balance} ${amount}` };
       }
     }
 
@@ -301,7 +309,7 @@ Web3Function.onRun(async (context: any) => {
     callData: [
       {
         to: originContractAddress,
-        data: originContract.interface.encodeFunctionData("_priceFeedAutomateCron", [
+        data: originContract.interface.encodeFunctionData("_conditionalAutomateCron", [
           senderAddress.toString(),
           receiverAddress.toString(),
           amount.toString(),
