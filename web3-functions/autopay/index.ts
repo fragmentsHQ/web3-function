@@ -9,8 +9,14 @@ import { parseEther } from "ethers/lib/utils";
 
 const IERC20 = [
   "function balanceOf(address account) external view returns (uint256)",
+  "function decimals() external view returns (uint8)",
   "function allowance(address owner, address spender) external view returns (uint256)",
 ];
+
+const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
+
+const ETH = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
+
 const AUTOPAY_CONTRACT = [
   {
     "inputs": [
@@ -73,6 +79,16 @@ const AUTOPAY_CONTRACT = [
         "internalType": "uint256",
         "name": "_relayerFeeInTransactingAsset",
         "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "_swapper",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes",
+        "name": "_swapData",
+        "type": "bytes"
       }
     ],
     "name": "_timeAutomateCron",
@@ -135,46 +151,130 @@ Web3Function.onRun(async (context: any) => {
     interval
   )
 
-
-  // APPROVAL CHECK
-  // try {
-  //   const tokenContract = new Contract(
-  //     fromToken.toString(),
-  //     IERC20,
-  //     provider
-  //   );
-  //   const allowance = parseInt(await tokenContract.allowance(senderAddress, originContractAddress));
-
-  //   if (allowance < amount) {
-  //     return { canExec: false, message: `Amount is greater than allowance.` };
-  //   }
-
-  //   const balance = parseInt(await tokenContract.balanceOf(senderAddress));
-  //   if (balance < amount) {
-  //     return { canExec: false, message: `Insufficient Balance.` };
-  //   }
-
-  // } catch (error) {
-  //   return { canExec: false, message: `ERROR in fetching allowance, ${error}` };
-  // }
-
-  // console.log("APPROVAL CHECK DONE")
-
-  // API CALL FOR RELAYER FEE
-  let FEE_USD: Number = 0;
-  try {
-    const connextRelayerFEE = `https://connext-relayer-fee.vercel.app/${originDomain}/${destinationDomain}`;
-
-    const priceData: { FEE_USD: number } = await ky
-      .get(connextRelayerFEE, { timeout: 15_000, retry: 5 })
-      .json();
-    FEE_USD = parseInt(priceData.FEE_USD.toString());
-  } catch (error) {
-    return { canExec: false, message: `Connext RELAYER FEE API call failed, ${error}` };
+  const URL: any = {
+    1: "https://api.0x.org/",
+    5: "https://goerli.api.0x.org/",
+    137: "https://polygon.api.0x.org/",
+    80001: "https://mumbai.api.0x.org/",
+    38: "https://bsc.api.0x.org/",
+    10: "https://optimism.api.0x.org/",
+    250: "https://fantom.api.0x.org/",
+    42220: "https://celo.api.0x.org/",
+    43114: "https://avalanche.api.0x.org/",
+    42161: "https://arbitrum.api.0x.org/",
   }
 
-  console.log("API CALL FOR RELAYER FEE DONE", FEE_USD);
+  interface Response {
+    price: string;
+    guaranteedPrice: string;
+    estimatedPriceImpact: string;
+    to: string;
+    data: string;
+    value: string;
+    gas: string;
+    estimatedGas: string;
+    gasPrice: string;
+    sellTokenToEthRate: string;
+  }
 
+  if (fromToken == ETH || toToken == ETH || fromToken == ZERO_ADDRESS || toToken == ZERO_ADDRESS) {
+    return { canExec: false, message: "Native Currency Not Supported, TRY ERC20 TOKENS" };
+  }
+
+  let swapper: string = ZERO_ADDRESS;
+  let swapData: string = "0x";
+  let priceData: Response;
+  try {
+    const API = ky.extend({
+      hooks: {
+        beforeRequest: [
+          request => {
+            request.headers.set('0x-api-key', 'b40bf764-6025-4f73-8507-8f398720c356');
+          }
+        ]
+      }
+    });
+
+    const ZeroXAPI = `swap/v1/quote?buyToken=${toToken}&sellToken=${fromToken}&sellAmount=${amount}`;
+
+    console.log(URL[fromChain] + ZeroXAPI);
+
+    priceData = await API
+      .get(ZeroXAPI, { prefixUrl: URL[fromChain], timeout: 15_000, retry: 5 })
+      .json();
+
+    swapper = priceData.to;
+    swapData = priceData.data;
+
+    console.log(priceData.guaranteedPrice);
+    console.log(swapper);
+    console.log(swapData);
+    console.log(priceData.estimatedGas);
+
+
+    let priceFetched: Number = Math.floor(Number(priceData.guaranteedPrice));
+
+  } catch (error) {
+    console.error(error);
+    return { canExec: false, message: `ZeroX API call failed, ${error}` };
+  }
+
+
+  let balance;
+  let decimals: number = 18;
+  try {
+    if (fromToken == ETH) {
+      balance = (await provider.getBalance(senderAddress)).toString();
+
+    } else {
+
+
+      const tokenContract = new Contract(
+        fromToken.toString(),
+        IERC20,
+        provider
+      );
+      const allowance = parseInt(await tokenContract.allowance(senderAddress, originContractAddress));
+
+      if (allowance < amount) {
+        return { canExec: false, message: `Amount is greater than allowance. ${allowance} ${amount}` };
+      }
+
+      balance = parseInt(await tokenContract.balanceOf(senderAddress));
+      if (balance < amount) {
+        return { canExec: false, message: `Insufficient Balance. ${balance} ${amount}` };
+      }
+      decimals = parseInt(await tokenContract.decimals());
+    }
+
+  } catch (error) {
+    return { canExec: false, message: `ERROR in fetching allowance, ${error}` };
+  }
+
+  console.log("APPROVAL CHECK DONE", balance)
+
+  // API CALL FOR RELAYER FEE
+  let FEE = 0;
+  if (fromChain != toChain) {
+    try {
+      const connextRelayerFEE = `https://connext-relayer-fee.vercel.app/${originDomain}/${destinationDomain}`;
+
+      const priceData: { FEE: number } = await ky
+        .get(connextRelayerFEE, { timeout: 15_000, retry: 5 })
+        .json();
+      FEE = parseInt(priceData.FEE.toString());
+    } catch (error) {
+      return { canExec: false, message: `Connext RELAYER FEE API call failed, ${error}` };
+    }
+
+    console.log(amount / 10 ** decimals, priceData.sellTokenToEthRate)
+
+    console.log("API CALL FOR RELAYER FEE DONE", FEE, ((amount / 10 ** decimals) / parseInt(priceData.sellTokenToEthRate)) * 10 ** 18);
+
+    if (FEE > ((amount / 10 ** decimals) / parseInt(priceData.sellTokenToEthRate)) * 10 ** 18) {
+      return { canExec: false, message: `Relayer FEE is greater than amount. ${FEE} ${((amount / 10 ** decimals) / parseInt(priceData.sellTokenToEthRate)) * 10 ** 18}` };
+    }
+  }
   // ORIGIN CONTRACT INITILISATION
   let originContract;
   try {
@@ -188,7 +288,7 @@ Web3Function.onRun(async (context: any) => {
     return { canExec: false, message: `Contract Initialisation Failed,  ${error}` };
   }
 
-  console.log("ORIGIN CONTRACT INITILISATION DONE", originContract);
+  console.log("ORIGIN CONTRACT INITILISATION DONE");
 
   // Return execution call data
   return {
@@ -208,7 +308,9 @@ Web3Function.onRun(async (context: any) => {
           cycles,
           startTime,
           interval,
-          (FEE_USD).toString()
+          (FEE).toString(),
+          String(swapper),
+          String(swapData)
         ]),
       },
     ],

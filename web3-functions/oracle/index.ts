@@ -98,9 +98,10 @@ const CONDITIONAL_CONTRACT = [
     ],
     "name": "_conditionalAutomateCron",
     "outputs": [],
-    "stateMutability": "payable",
+    "stateMutability": "nonpayable",
     "type": "function"
-  }
+  },
+
 ];
 
 const URL: any = {
@@ -294,6 +295,8 @@ Web3Function.onRun(async (context: any) => {
       return { canExec: false, message: `Connext RELAYER FEE API call failed, ${error}` };
     }
 
+    console.log(amount /10 ** decimals, priceData.sellTokenToEthRate)
+
     console.log("API CALL FOR RELAYER FEE DONE", FEE, ((amount / 10 ** decimals) / parseInt(priceData.sellTokenToEthRate)) * 10 ** 18);
 
     if (FEE > ((amount / 10 ** decimals) / parseInt(priceData.sellTokenToEthRate)) * 10 ** 18) {
@@ -339,8 +342,7 @@ Web3Function.onRun(async (context: any) => {
           (FEE).toString(),
           String(swapper),
           String(swapData)
-        ]),
-        value: String(0)
+        ])
       },
     ],
   };

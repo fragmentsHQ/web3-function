@@ -1,9 +1,9 @@
 {
   "_from": "0x6d4b5acFB1C08127e8553CC41A9aC8F06610eFc7",
   "_to": "0x6d4b5acFB1C08127e8553CC41A9aC8F06610eFc7",
-  "_amount": "100000000000000000000",
-  "_fromToken": "0x7ea6eA49B0b0Ae9c5db7907d139D9Cd3439862a1",
-  "_toToken": "0xeDb95D8037f769B72AAab41deeC92903A98C9E16",
+  "_amount": "40000000000",
+  "_fromToken": "0x07865c6E87B9F70255377e024ace6630C1Eaa37F",
+  "_toToken": "0xC2C527C0CACF457746Bd31B2a698Fe89de2b6d49",
   "_fromChain": 5,
   "_toChain": 80001,
   "_originDomain": 1735353714,
